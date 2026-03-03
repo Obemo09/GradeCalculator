@@ -41,9 +41,21 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.InputStream
 import java.io.OutputStream
 
+/**
+ * Custom Higher-Order Function demonstration.
+ * Takes a list of students and a transformation lambda.
+ */
+fun <T> processStudents(students: List<Student>, transformer: (Student) -> T): List<T> {
+    return students.map(transformer)
+}
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // --- Demonstration for Requirements ---
+        runDemonstration()
+        
         enableEdgeToEdge()
         setContent {
             GradeCalculatorTheme {
@@ -55,6 +67,25 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun runDemonstration() {
+        val demoList = listOf(
+            Student("Alice Johnson", 92.0, "A"),
+            Student("Bob Smith", 45.0, "D"),
+            Student("   ", -10.0, "F"), // Invalid
+            Student("Charlie Brown", 78.0, "B")
+        )
+
+        // 1. Using higher-order function (filter)
+        val validStudents = demoList.filter { it.isValid() }
+        Log.d("Demo", "Valid Students count: ${validStudents.size}")
+
+        // 2. Using custom higher-order function with lambda
+        val details = processStudents(validStudents) { it.getFormattedDetails() }
+        
+        // 3. Using higher-order function (forEach)
+        details.forEach { Log.d("Demo", "Formatted: $it") }
     }
 }
 
@@ -76,7 +107,8 @@ fun GradeCalculatorScreen() {
             scope.launch {
                 val result = readExcelFile(context.contentResolver.openInputStream(it))
                 if (result.isSuccess) {
-                    students = result.getOrNull() ?: emptyList()
+                    // Use higher-order function (filter) to ensure only valid data is shown
+                    students = result.getOrNull()?.filter { it.isValid() } ?: emptyList()
                 } else {
                     errorMessage = result.exceptionOrNull()?.message ?: "Failed to read Excel file"
                 }
@@ -185,6 +217,7 @@ fun GradeCalculatorScreen() {
 
 @Composable
 fun SummaryHeader(students: List<Student>) {
+    // Higher-order function usage: map
     val average = students.map { it.score }.average()
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -372,6 +405,7 @@ suspend fun writeExcelFile(outputStream: OutputStream?, students: List<Student>)
         // Styles
         val headerFont = workbook.createFont()
         headerFont.bold = true
+        headerFont.fontHeightInPoints = 12.toShort()
         
         val headerStyle = workbook.createCellStyle()
         headerStyle.alignment = HorizontalAlignment.CENTER
@@ -386,14 +420,20 @@ suspend fun writeExcelFile(outputStream: OutputStream?, students: List<Student>)
 
         // Create Header Row
         val headerRow = sheet.createRow(0)
-        val headers = listOf("Student Name", "Score", "Grade")
-        headers.forEachIndexed { i, title ->
-            val cell = headerRow.createCell(i)
-            cell.setCellValue(title)
-            cell.cellStyle = headerStyle
-        }
+        
+        val nameCellHeader = headerRow.createCell(0)
+        nameCellHeader.setCellValue("Student Name")
+        nameCellHeader.cellStyle = headerStyle
+        
+        val scoreCellHeader = headerRow.createCell(1)
+        scoreCellHeader.setCellValue("Score")
+        scoreCellHeader.cellStyle = headerStyle
+        
+        val gradeCellHeader = headerRow.createCell(2)
+        gradeCellHeader.setCellValue("Grade")
+        gradeCellHeader.cellStyle = headerStyle
 
-        // Fill Data
+        // Higher-order function usage: forEach
         students.forEachIndexed { index, student ->
             val row = sheet.createRow(index + 1)
             
@@ -410,10 +450,10 @@ suspend fun writeExcelFile(outputStream: OutputStream?, students: List<Student>)
             gradeCell.cellStyle = centerStyle
         }
 
-        // Set fixed column widths
-        sheet.setColumnWidth(0, 25 * 256) // Increased to ensure names fit
-        sheet.setColumnWidth(1, 15 * 256) // Increased to ensure "Score" header fits fully
-        sheet.setColumnWidth(2, 10 * 256)
+        // Set wide fixed column widths
+        sheet.setColumnWidth(0, 30 * 256) 
+        sheet.setColumnWidth(1, 20 * 256)
+        sheet.setColumnWidth(2, 15 * 256)
 
         outputStream.use { 
             workbook.write(it)
