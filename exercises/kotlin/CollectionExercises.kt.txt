@@ -1,0 +1,52 @@
+// ============================
+// Collection Exercises
+// Author: Emmanuel Obasi Okorie
+// Ready-to-run Kotlin console program
+// ============================
+
+// ===== Exercise 1 =====
+// Higher-order function: filter a list based on a predicate
+fun processList(numbers: List<Int>, predicate: (Int) -> Boolean): List<Int> {
+    val result = mutableListOf<Int>()
+    for (num in numbers) {
+        if (predicate(num)) result.add(num)
+    }
+    return result
+}
+
+// ===== Exercise 3 =====
+// Data class for people (used in Exercise 3)
+data class Person(val name: String, val age: Int)
+
+// ===== Main function =====
+fun main() {
+
+    // --- Exercise 1 ---
+    println("Exercise 1 Output:")
+    val nums = listOf(1, 2, 3, 4, 5, 6)
+    val even = processList(nums) { it % 2 == 0 }
+    println(even)
+    println()
+
+    // --- Exercise 2 ---
+    println("Exercise 2 Output:")
+    val words = listOf("apple", "cat", "banana", "dog", "elephant")
+    val wordLengths = words.associateWith { it.length }
+    wordLengths.filter { it.value > 4 }
+        .forEach { (word, length) -> println("$word has length $length") }
+    println()
+
+    // --- Exercise 3 ---
+    println("Exercise 3 Output:")
+    val people = listOf(
+        Person("Alice", 25),
+        Person("Bob", 30),
+        Person("Charlie", 35),
+        Person("Anna", 22),
+        Person("Ben", 28)
+    )
+    val averageAge = people.filter { it.name.startsWith("A") || it.name.startsWith("B") }
+        .map { it.age }
+        .average()
+    println("Average age: %.1f".format(averageAge))
+}
